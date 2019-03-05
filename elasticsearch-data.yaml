@@ -1,0 +1,44 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: elasticsearch
+    role: data
+  name: elasticsearch-data
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: elasticsearch
+      role: data
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: elasticsearch
+        role: data
+    spec:
+      containers:
+      - env:
+        - name: cluster.name
+          value: es_cluster
+        - name: node.master
+          value: "false"
+        - name: node.ingest
+          value: "true"
+        - name: node.data
+          value: "true"
+        - name: http.enabled
+          value: "true"
+        - name: ES_JAVA_OPTS
+          value: -Xms512m -Xmx512m
+        - name: discovery.zen.ping.unicast.hosts
+          value: elasticsearch-discovery.default.svc.master.cn
+        image: elasticsearch:6.4.0
+        imagePullPolicy: IfNotPresent
+        name: elasticsearch-data
+        ports:
+        - containerPort: 9300
+          protocol: TCP
+      restartPolicy: Always

@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: elasticsearch-cluster
+  name: elasticsearch-cluster
+  namespace: default
+spec:
+  replicas: 1
+  serviceName: elasticsearch-cluster
+  selector:
+    matchLabels:
+      app: elasticsearch-cluster
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: elasticsearch-cluster
+    spec:
+      containers:
+      - name: elasticsearch-cluster
+        image: elasticsearch:6.4.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: ES_JAVA_OPTS
+          value: -Xms512m -Xmx512m
+        command: 
+        - bash
+        - "-c"
+        - |
+          if [ $HOSTNAME = "elasticsearch-cluster-0" ];then 
+            sed -r 's/node.master:.*/node.master: true/g' /tmp/es-config/elasticsearch.yaml \
+            > /usr/share/elasticsearch/config/elasticsearch.yml
+          else
+            sed  '/discovery.zen.minimum_master_nodes/d' /tmp/es-config/elasticsearch.yaml \
+            > /usr/share/elasticsearch/config/elasticsearch.yml
+          fi
+          /usr/local/bin/docker-entrypoint.sh
+        ports:
+        - containerPort: 9300
+          protocol: TCP
+        - containerPort: 9200
+          protocol: TCP
+        volumeMounts:
+        - name: storage
+          mountPath: /usr/share/elasticsearch/data
+        - name: config-volume
+          mountPath: /tmp/es-config/
+      restartPolicy: Always
+      volumes:
+      - name: config-volume
+        configMap:
+           name: elastic-cluster-config 
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      # storageClassName: standard
+      accessModes: [ ReadWriteOnce ]
+      resources:
+        requests:
+          storage: 500Gi
+      

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: elasticsearch-discovery
+  name: elasticsearch-discovery
+  namespace: default
+spec:
+  clusterIP: None
+  ports:
+  - name: es-server
+    port: 9300
+    protocol: TCP
+    targetPort: 9300
+  selector:
+    app: elasticsearch-cluster
+  type: ClusterIP

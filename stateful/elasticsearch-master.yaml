@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: elasticsearch
+    role: master
+  name: elasticsearch-master
+  namespace: default
+spec:
+  replicas: 1
+  serviceName: elasticsearch-master
+  selector:
+    matchLabels:
+      app: elasticsearch
+      role: master
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: elasticsearch
+        role: master
+    spec:
+      containers:
+      - name: elasticsearch-master
+        image: elasticsearch:6.4.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: ES_JAVA_OPTS
+          value: -Xms512m -Xmx512m
+        command: ["bash"]
+        args: ["-c", "cp /tmp/es-config/elastic_master.yaml /usr/share/elasticsearch/config/elasticsearch.yml;/usr/local/bin/docker-entrypoint.sh"]
+        ports:
+        - containerPort: 9300
+          protocol: TCP
+        volumeMounts:
+        - name: storage
+          mountPath: /usr/share/elasticsearch/data
+        - name: config-volume
+          mountPath: /tmp/es-config/
+      restartPolicy: Always
+      volumes:
+      - name: config-volume
+        configMap:
+           name: elastic-cluster-config 
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      # storageClassName: standard
+      accessModes: [ ReadWriteOnce ]
+      resources:
+        requests:
+          storage: 10Gi
+      
